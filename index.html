@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="oscuro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ErgoCabina | Software de Control Ergonómico HMI</title>
+  
+  <!-- FontAwesome & Chart.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* VARIABLES DE TEMA OSCURO (POR DEFECTO) */
+    :root[data-theme="oscuro"] {
+      --bg-principal: #06090e;
+      --bg-tarjeta: #0d1520;
+      --bg-control: #131e2e;
+      --verde-neon: #10b981;
+      --verde-brillo: #34d399;
+      --verde-oscuro: #064e3b;
+      --texto-principal: #f1f5f9;
+      --texto-secundario: #94a3b8;
+      --alerta: #f59e0b;
+      --peligro: #ef4444;
+      --borde-tarjeta: rgba(16, 185, 129, 0.15);
+      --sombra-neon: 0 0 20px rgba(16, 185, 129, 0.15);
+      --input-bg: #06090e;
+      --input-border: rgba(255, 255, 255, 0.1);
+      --header-bg: rgba(13, 21, 32, 0.9);
+      --dropdown-bg: #0d1520;
+    }
+
+    /* VARIABLES DE TEMA CLARO */
+    :root[data-theme="claro"] {
+      --bg-principal: #f1f5f9;
+      --bg-tarjeta: #ffffff;
+      --bg-control: #f8fafc;
+      --verde-neon: #059669;
+      --verde-brillo: #047857;
+      --verde-oscuro: #d1fae5;
+      --texto-principal: #0f172a;
+      --texto-secundario: #475569;
+      --alerta: #d97706;
+      --peligro: #dc2626;
+      --borde-tarjeta: rgba(5, 150, 105, 0.2);
+      --sombra-neon: 0 10px 25px rgba(5, 150, 105, 0.1);
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --header-bg: rgba(255, 255, 255, 0.9);
+      --dropdown-bg: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-principal);
+      color: var(--texto-principal);
+      min-height: 100vh;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* HEADER INDUSTRIAL */
+    header {
+      padding: 18px 24px;
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--borde-tarjeta);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-contenedor {
+      max-width: 1300px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--bg-principal);
+      border: 1px solid var(--verde-neon);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: var(--verde-neon);
+      font-size: 1.2rem;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    }
+
+    h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.5px; }
+    .subtitulo { font-size: 0.8rem; color: var(--texto-secundario); }
+
+    .header-derecha {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    nav button {
+      border: 1px solid var(--borde-tarjeta);
+      background: var(--bg-control);
+      color: var(--texto-secundario);
+      padding: 9px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    nav button:hover, nav button.activo {
+      background: var(--verde-oscuro);
+      border-color: var(--verde-neon);
+      color: var(--verde-brillo);
+      box-shadow: 0 0 12px var(--borde-tarjeta);
+    }
+
+    /* MENÚ DESPLEGABLE DE AJUSTES */
+    .menu-ajustes { position: relative; }
+
+    .btn-ajustes {
+      border: 1px solid var(--borde-tarjeta);
+      background: var(--bg-control);
+      color: var(--texto-principal);
+      padding: 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s;
+    }
+
+    .btn-ajustes:hover { border-color: var(--verde-neon); }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      background: var(--dropdown-bg);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 10px;
+      box-shadow: var(--sombra-neon);
+      width: 200px;
+      z-index: 100;
+      overflow: hidden;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .dropdown-content.visible { display: block; }
+
+    .dropdown-header {
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--texto-secundario);
+      border-bottom: 1px solid var(--borde-tarjeta);
+      background: var(--bg-control);
+    }
+
+    .dropdown-opcion {
+      width: 100%;
+      padding: 12px 14px;
+      background: transparent;
+      border: none;
+      color: var(--texto-principal);
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.2s;
+    }
+
+    .dropdown-opcion:hover {
+      background: var(--verde-oscuro);
+      color: var(--verde-brillo);
+    }
+
+    .dropdown-opcion i { color: var(--verde-neon); width: 16px; }
+
+    main {
+      max-width: 1300px;
+      margin: auto;
+      padding: 24px 20px 60px;
+    }
+
+    .panel { display: none; animation: fadeIn 0.4s ease-in-out; }
+    .panel.visible { display: block; }
+
+    .tarjeta {
+      background: var(--bg-tarjeta);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 22px;
+      box-shadow: var(--sombra-neon);
+    }
+
+    .titulo-seccion {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--borde-tarjeta);
+      padding-bottom: 12px;
+    }
+
+    h2 { font-size: 1.2rem; font-weight: 700; color: var(--texto-principal); display: flex; align-items: center; gap: 10px; }
+    h2 i { color: var(--verde-neon); }
+    h3 { font-size: 0.95rem; margin-bottom: 12px; color: var(--verde-brillo); }
+    p { font-size: 0.88rem; line-height: 1.55; color: var(--texto-secundario); }
+    
+    .nota {
+      font-size: 0.76rem;
+      color: var(--texto-secundario);
+      margin-top: 8px;
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 18px;
+    }
+
+    .selector-cabina {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      background: var(--bg-principal);
+      padding: 5px;
+      border-radius: 10px;
+      width: fit-content;
+      border: 1px solid var(--borde-tarjeta);
+    }
+
+    .selector-cabina button {
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--texto-secundario);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .selector-cabina button.activo {
+      background: var(--verde-neon);
+      color: var(--bg-principal);
+      font-weight: 700;
+      box-shadow: 0 0 10px var(--borde-tarjeta);
+    }
+
+    :root[data-theme="claro"] .selector-cabina button.activo { color: #ffffff; }
+
+    .contexto-cabina {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+      padding: 14px 18px;
+      background: var(--bg-tarjeta);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 12px;
+    }
+
+    .contexto-cabina strong { display: block; margin-bottom: 3px; }
+    .contexto-cabina .selector-cabina { margin: 0; }
+
+    .etiqueta-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      color: var(--alerta);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      font-size: 0.74rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .resumen-cabinas {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .tarjeta-cabina {
+      background: var(--bg-control);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 14px;
+      padding: 20px;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .tarjeta-cabina:hover {
+      border-color: var(--verde-neon);
+      transform: translateY(-2px);
+      box-shadow: var(--sombra-neon);
+    }
+
+    .cabina-resumen-cabecera, .cabina-resumen-estado {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cabina-resumen-cabecera { margin-bottom: 18px; }
+    .cabina-resumen-cabecera h3 { margin: 0; color: var(--texto-principal); font-size: 1.05rem; }
+    .cabina-resumen-estado { margin-bottom: 16px; }
+
+    .indicador-disponible {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--verde-brillo);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .indicador-disponible::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--verde-neon);
+    }
+
+    .metricas-resumen {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .metrica-resumen {
+      padding: 12px;
+      background: var(--bg-tarjeta);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 9px;
+    }
+
+    .metrica-resumen span { display: block; color: var(--texto-secundario); font-size: 0.72rem; }
+    .metrica-resumen strong { display: block; margin-top: 5px; font-size: 1.08rem; }
+
+    .resumen-acciones {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .aviso-prototipo {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px;
+    }
+
+    .aviso-prototipo i { color: var(--alerta); margin-top: 3px; }
+    .aviso-prototipo strong { display: block; margin-bottom: 4px; color: var(--texto-principal); }
+
+    .grafica-titulo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .grafica-titulo h3 { margin: 0; }
+
+    .control {
+      background: var(--bg-control);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 12px;
+      padding: 18px;
+    }
+
+    .interruptor {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+      font-size: 0.88rem;
+    }
+
+    .switch {
+      width: 52px;
+      height: 26px;
+      border-radius: 999px;
+      background: var(--input-border);
+      border: 0;
+      padding: 0;
+      color: inherit;
+      position: relative;
+      cursor: pointer;
+      transition: 0.3s;
+      flex-shrink: 0;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--texto-secundario);
+      transition: 0.3s;
+    }
+
+    .switch.encendido {
+      background: var(--verde-oscuro);
+      border-color: var(--verde-neon);
+    }
+    
+    .switch.encendido::after {
+      left: 29px;
+      background: var(--verde-neon);
+      box-shadow: 0 0 6px var(--verde-neon);
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--verde-neon);
+      margin-top: 8px;
+    }
+
+    .etiqueta-valor {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: var(--texto-secundario);
+      margin-top: 8px;
+    }
+    .etiqueta-valor span:last-child { color: var(--verde-brillo); font-weight: 600; }
+
+    /* TARJETAS DE SENSORES Y VARIABLES */
+    .sensor {
+      text-align: center;
+      padding: 18px 12px;
+      background: var(--bg-control);
+      border-radius: 12px;
+      border: 1px solid var(--borde-tarjeta);
+      transition: 0.3s ease;
+    }
+
+    .sensor:hover {
+      border-color: var(--verde-neon);
+      box-shadow: 0 0 15px var(--borde-tarjeta);
+    }
+
+    .sensor i { font-size: 1.3rem; color: var(--verde-neon); margin-bottom: 6px; }
+
+    .sensor .valor {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--texto-principal);
+      margin: 6px 0;
+      font-family: monospace;
+    }
+
+    .estado {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: var(--verde-oscuro);
+      color: var(--verde-brillo);
+      border: 1px solid var(--borde-tarjeta);
+      text-transform: uppercase;
+    }
+
+    .estado.alerta { background: rgba(245, 158, 11, 0.15); color: var(--alerta); border-color: var(--alerta); }
+    .estado.peligro { background: rgba(239, 68, 68, 0.15); color: var(--peligro); border-color: var(--peligro); }
+
+    .barra {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--input-border);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .barra span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--verde-neon);
+      transition: width 0.8s ease;
+    }
+
+    .contenedor-grafica {
+      background: var(--bg-control);
+      border: 1px solid var(--borde-tarjeta);
+      border-radius: 12px;
+      padding: 16px;
+      position: relative;
+      height: 250px;
+    }
+
+    /* PESTAÑAS DE EVALUACIONES ERGONÓMICAS */
+    .menu-evaluaciones {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--borde-tarjeta);
+    }
+
+    .btn-eval-tab {
+      background: var(--bg-control);
+      border: 1px solid var(--borde-tarjeta);
+      color: var(--texto-secundario);
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-eval-tab i { color: var(--verde-neon); }
+
+    .btn-eval-tab:hover, .btn-eval-tab.activo {
+      background: var(--verde-oscuro);
+      border-color: var(--verde-neon);
+      color: var(--verde-brillo);
+      box-shadow: 0 0 12px var(--borde-tarjeta);
+      transform: translateY(-2px);
+    }
+
+    :root[data-theme="claro"] .btn-eval-tab.activo { color: #064e3b; }
+
+    .eval-modulo { display: none; animation: fadeIn 0.4s ease; }
+    .eval-modulo.activo { display: block; }
+
+    .pregunta {
+      background: var(--bg-control);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border-left: 3px solid var(--verde-neon);
+    }
+
+    .opciones {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .opciones label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-principal);
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      border: 1px solid var(--borde-tarjeta);
+    }
+
+    .opciones label:hover { border-color: var(--verde-neon); color: var(--verde-brillo); }
+
+    .boton {
+      background: var(--verde-oscuro);
+      border: 1px solid var(--verde-neon);
+      color: var(--verde-brillo);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.88rem;
+      transition: all 0.25s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .boton:hover {
+      background: var(--verde-neon);
+      color: #ffffff;
+      box-shadow: 0 0 15px var(--borde-tarjeta);
+    }
+
+    button:focus-visible, input:focus-visible, select:focus-visible, .switch:focus-visible {
+      outline: 3px solid var(--alerta);
+      outline-offset: 3px;
+    }
+
+    :root[data-theme="claro"] .boton:hover { color: #064e3b; }
+
+    .resultado {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 10px;
+      background: var(--verde-oscuro);
+      border: 1px solid var(--verde-neon);
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .resultado.visible { display: block; }
+
+    .campo { margin-bottom: 14px; }
+    .campo label { display: block; font-size: 0.82rem; margin-bottom: 6px; color: var(--texto-secundario); }
+    
+    .campo select, .campo input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--texto-principal);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .campo select:focus, .campo input:focus { border-color: var(--verde-neon); }
+
+    .ejemplo {
+      margin-top: 6px;
+      font-size: 0.76rem;
+      color: var(--verde-brillo);
+      background: var(--bg-principal);
+      padding: 6px 10px;
+      border-radius: 4px;
+      border-left: 2px solid var(--verde-neon);
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.76rem;
+      color: var(--texto-secundario);
+      border-top: 1px solid var(--borde-tarjeta);
+      background: var(--bg-principal);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      header { padding: 14px 16px; }
+      .header-contenedor { flex-direction: column; align-items: stretch; }
+      .marca { gap: 10px; }
+      .header-derecha { flex-direction: column; align-items: stretch; }
+      nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+        padding: 0;
+      }
+      nav button { justify-content: center; min-height: 42px; }
+      nav button:last-child { grid-column: 1 / -1; }
+      .header-derecha { width: 100%; justify-content: flex-start; }
+      .menu-ajustes { align-self: flex-start; }
+      .grid-2col { grid-template-columns: 1fr; }
+      .resumen-cabinas { grid-template-columns: 1fr; }
+      .contexto-cabina { align-items: flex-start; }
+      .contexto-cabina .selector-cabina { width: 100%; }
+      .selector-cabina button { flex: 1; justify-content: center; padding: 8px 10px; }
+      .contenedor-grafica { min-width: 0; }
+      .titulo-seccion { align-items: flex-start; }
+    }
+
+    @media (max-width: 420px) {
+      main { padding: 18px 12px 40px; }
+      .tarjeta { padding: 18px; }
+      h1 { font-size: 1.1rem; }
+      .subtitulo { font-size: 0.74rem; }
+      nav { gap: 6px; }
+      nav button { padding: 8px 6px; font-size: 0.76rem; gap: 6px; }
+      .contexto-cabina { padding: 12px; }
+      .etiqueta-demo { white-space: normal; }
+      .metricas-resumen { gap: 7px; }
+      .metrica-resumen { padding: 9px; }
+      .metrica-resumen strong { font-size: 0.95rem; }
+      .menu-evaluaciones { margin-right: -4px; }
+      .btn-eval-tab { padding: 10px 13px; }
+      .opciones { gap: 8px; }
+      .opciones label { flex: 1; justify-content: center; padding: 8px; }
+      .resumen-acciones { align-items: stretch; }
+      .resumen-acciones .boton { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-contenedor">
+    <div class="marca">
+      <div class="logo"><i class="fa-solid fa-terminal"></i></div>
+      <div>
+        <h1>ErgoCabina HMI v2.7</h1>
+        <div class="subtitulo">Prototipo de operación ergonómica para dos cabinas</div>
+      </div>
+    </div>
+
+    <div class="header-derecha">
+      <nav>
+        <button class="activo" data-panel="resumen"><i class="fa-solid fa-table-columns"></i> Resumen</button>
+        <button data-panel="cabinas"><i class="fa-solid fa-sliders"></i> Controles</button>
+        <button data-panel="sensores"><i class="fa-solid fa-chart-line"></i> Telemetría Live</button>
+        <button data-panel="imss"><i class="fa-solid fa-clipboard-check"></i> Test IMSS</button>
+        <button data-panel="ergonomia"><i class="fa-solid fa-microscope"></i> Evaluaciones</button>
+      </nav>
+
+      <!-- MENÚ DESPLEGABLE DE AJUSTES -->
+      <div class="menu-ajustes">
+        <button class="btn-ajustes" onclick="toggleMenuAjustes(event)">
+          <i class="fa-solid fa-gear"></i> Ajustes <i class="fa-solid fa-caret-down" style="font-size:0.75rem;"></i>
+        </button>
+        <div class="dropdown-content" id="dropdownAjustes">
+          <div class="dropdown-header">Apariencia Visual</div>
+          <button class="dropdown-opcion" onclick="cambiarTema('oscuro')">
+            <i class="fa-solid fa-moon"></i> Modo Oscuro
+          </button>
+          <button class="dropdown-opcion" onclick="cambiarTema('claro')">
+            <i class="fa-solid fa-sun"></i> Modo Claro
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="contexto-cabina">
+    <div>
+      <strong>Cabina seleccionada: <span id="cabinaSeleccionadaTexto">Cabina 01</span></strong>
+      <span class="nota" style="margin-top:0;">La selección se comparte entre controles y telemetría.</span>
+    </div>
+    <div class="selector-cabina" aria-label="Seleccionar cabina">
+      <button class="btn-cabina-global activo" type="button" data-cabina="1" aria-pressed="true"><i class="fa-solid fa-cube"></i> Cabina 01</button>
+      <button class="btn-cabina-global" type="button" data-cabina="2" aria-pressed="false"><i class="fa-solid fa-cube"></i> Cabina 02</button>
+    </div>
+    <span class="etiqueta-demo"><i class="fa-solid fa-flask"></i> Prototipo · datos de demostración</span>
+  </div>
+
+  <section id="resumen" class="panel visible">
+    <div class="tarjeta">
+      <div class="titulo-seccion">
+        <div>
+          <h2><i class="fa-solid fa-table-columns"></i> Resumen de cabinas</h2>
+          <span class="nota">Vista general para identificar rápidamente el estado y las condiciones ambientales.</span>
+        </div>
+        <span class="etiqueta-demo"><i class="fa-solid fa-circle-info"></i> Lecturas ilustrativas</span>
+      </div>
+
+      <div class="resumen-cabinas">
+        <article class="tarjeta-cabina">
+          <div class="cabina-resumen-cabecera">
+            <h3><i class="fa-solid fa-cube"></i> Cabina 01</h3>
+            <span class="indicador-disponible">Estado de ejemplo</span>
+          </div>
+          <div class="cabina-resumen-estado">
+            <span class="nota" style="margin:0;">Condiciones de ejemplo</span>
+            <span class="etiqueta-demo"><i class="fa-solid fa-flask"></i> Demo</span>
+          </div>
+          <div class="metricas-resumen">
+            <div class="metrica-resumen"><span>Temperatura</span><strong>22.5 °C</strong></div>
+            <div class="metrica-resumen"><span>CO₂</span><strong>450 ppm</strong></div>
+            <div class="metrica-resumen"><span>Iluminación</span><strong>510 lux</strong></div>
+          </div>
+          <div class="resumen-acciones">
+            <span class="nota" style="margin:0;">Sin alertas de ejemplo</span>
+            <button class="boton btn-ver-cabina" type="button" data-cabina="1"><i class="fa-solid fa-arrow-right"></i> Ver cabina</button>
+          </div>
+        </article>
+
+        <article class="tarjeta-cabina">
+          <div class="cabina-resumen-cabecera">
+            <h3><i class="fa-solid fa-cube"></i> Cabina 02</h3>
+            <span class="indicador-disponible">Estado de ejemplo</span>
+          </div>
+          <div class="cabina-resumen-estado">
+            <span class="nota" style="margin:0;">Condiciones de ejemplo</span>
+            <span class="etiqueta-demo"><i class="fa-solid fa-flask"></i> Demo</span>
+          </div>
+          <div class="metricas-resumen">
+            <div class="metrica-resumen"><span>Temperatura</span><strong>24.0 °C</strong></div>
+            <div class="metrica-resumen"><span>CO₂</span><strong>480 ppm</strong></div>
+            <div class="metrica-resumen"><span>Iluminación</span><strong>400 lux</strong></div>
+          </div>
+          <div class="resumen-acciones">
+            <span class="nota" style="margin:0;">Sin alertas de ejemplo</span>
+            <button class="boton btn-ver-cabina" type="button" data-cabina="2"><i class="fa-solid fa-arrow-right"></i> Ver cabina</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="aviso-prototipo">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <div>
+          <strong>Vista de demostración</strong>
+          <p>Los valores y estados son ilustrativos; esta página todavía no está conectada a sensores ni actuadores reales.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 1: CONTROLES DE CABINAS -->
+  <section id="cabinas" class="panel">
+    <div class="tarjeta">
+      <div class="titulo-seccion">
+        <h2><i class="fa-solid fa-toggle-on"></i> Control de Actuadores y Luminarias</h2>
+        <span class="nota">Control independiente para Cabina 1 y Cabina 2.</span>
+      </div>
+
+      <div class="grid">
+        <div class="control">
+          <h3><i class="fa-solid fa-lightbulb"></i> Luminarias LED</h3>
+          <div class="interruptor">
+            <span>Luminaria Izquierda</span>
+            <button type="button" class="switch encendido" id="swLumIzq" role="switch" aria-label="Luminaria izquierda" aria-checked="true" onclick="toggleSwitch(this, 'lumIzq')"></button>
+          </div>
+          <div class="interruptor">
+            <span>Luminaria Derecha</span>
+            <button type="button" class="switch encendido" id="swLumDer" role="switch" aria-label="Luminaria derecha" aria-checked="true" onclick="toggleSwitch(this, 'lumDer')"></button>
+          </div>
+          <div class="etiqueta-valor">
+            <span>Intensidad Global</span>
+            <span id="valorLuz">75% (550 Lux)</span>
+          </div>
+          <input type="range" min="10" max="100" value="75" id="luz" oninput="actualizarControl('luz')">
+          <span class="nota">Referencia: NOM-025-STPS-2008.</span>
+        </div>
+
+        <div class="control">
+          <h3><i class="fa-solid fa-snowflake"></i> Climatización HVAC</h3>
+          <div class="interruptor">
+            <span>Aire Acondicionado</span>
+            <button type="button" class="switch encendido" id="swAire" role="switch" aria-label="Aire acondicionado" aria-checked="true" onclick="toggleSwitch(this, 'aire')"></button>
+          </div>
+          <div class="etiqueta-valor">
+            <span>Temperatura Consigna</span>
+            <span id="valorTemp">22 °C</span>
+          </div>
+          <input type="range" min="18" max="28" value="22" id="temperatura" oninput="actualizarControl('temp')">
+          <span class="nota">Referencia: NOM-015-STPS-2001.</span>
+        </div>
+
+        <div class="control">
+          <h3><i class="fa-solid fa-volume-high"></i> Acústica y Sonido</h3>
+          <div class="interruptor">
+            <span>Sistema Sonoro / Audio</span>
+            <button type="button" class="switch" id="swSonido" role="switch" aria-label="Sistema sonoro" aria-checked="false" onclick="toggleSwitch(this, 'sonido')"></button>
+          </div>
+          <div class="etiqueta-valor">
+            <span>Nivel de Volumen</span>
+            <span id="valorVolumen">35%</span>
+          </div>
+          <input type="range" min="0" max="100" value="35" id="volumen" oninput="actualizarControl('vol')">
+          <span class="nota">Referencia: NOM-011-STPS-2001.</span>
+        </div>
+
+        <div class="control">
+          <h3><i class="fa-solid fa-shield-halved"></i> Calidad de Aire y Confort</h3>
+          <div class="interruptor">
+            <span>Calidad del aire (Ventilación)</span>
+            <button type="button" class="switch encendido" id="swVent" role="switch" aria-label="Ventilación" aria-checked="true" onclick="toggleSwitch(this, 'vent')"></button>
+          </div>
+          <div class="interruptor">
+            <span>Alerta de Postura</span>
+            <button type="button" class="switch encendido" id="swAlarma" role="switch" aria-label="Alerta de postura" aria-checked="true" onclick="toggleSwitch(this, 'alarma')"></button>
+          </div>
+          <span class="nota">Prevención ergonómica (NOM-036-1-STPS).</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 2: TELEMETRÍA EN VIVO Y VARIABLES DE SENSORES -->
+  <section id="sensores" class="panel">
+    <div class="tarjeta">
+      <div class="titulo-seccion">
+        <h2><i class="fa-solid fa-gauge-high"></i> Panel de Sensores Ambientales y Telemetría</h2>
+        <span class="nota">Monitoreo en vivo de Temperatura, Humedad, Calidad de Aire, Intensidad Luminosa, Sonora, Índice UV y Vibraciones.</span>
+      </div>
+
+      <div class="aviso-prototipo" style="margin-bottom:18px;">
+        <i class="fa-solid fa-flask"></i>
+        <div><strong>Telemetría simulada</strong><p>Las gráficas y lecturas son una muestra visual, no mediciones reales.</p></div>
+      </div>
+
+      <!-- Métricas completas basadas en Node-RED -->
+      <div class="grid" style="margin-bottom: 24px;">
+        <div class="sensor">
+          <i class="fa-solid fa-temperature-half"></i>
+          <h3>Temperatura</h3>
+          <div class="valor" id="sTemperatura">22.5 °C</div>
+          <div class="barra"><span id="bTemperatura"></span></div>
+          <div class="estado" id="eTemperatura">Confortable</div>
+        </div>
+
+        <div class="sensor">
+          <i class="fa-solid fa-droplet"></i>
+          <h3>Humedad Relativa</h3>
+          <div class="valor" id="sHumedad">48%</div>
+          <div class="barra"><span id="bHumedad"></span></div>
+          <div class="estado" id="eHumedad">Óptima</div>
+        </div>
+
+        <div class="sensor">
+          <i class="fa-solid fa-wind"></i>
+          <h3>Calidad del Aire (CO2)</h3>
+          <div class="valor" id="sAire">450 ppm</div>
+          <div class="barra"><span id="bAire"></span></div>
+          <div class="estado" id="eAire">Buena</div>
+        </div>
+
+        <div class="sensor">
+          <i class="fa-solid fa-sun"></i>
+          <h3>Intensidad Luminosa</h3>
+          <div class="valor" id="sLux">510 Lux</div>
+          <div class="barra"><span id="bLux"></span></div>
+          <div class="estado" id="eLux">Adecuada</div>
+        </div>
+
+        <div class="sensor">
+          <i class="fa-solid fa-volume-high"></i>
+          <h3>Intensidad Sonora</h3>
+          <div class="valor" id="sSonido">58 dB</div>
+          <div class="barra"><span id="bSonido"></span></div>
+          <div class="estado" id="eSonido">Aceptable</div>
+        </div>
+
+        <div class="sensor">
+          <i class="fa-solid fa-sun-plant-wilt"></i>
+          <h3>Índice UV (UVI)</h3>
+          <div class="valor" id="sUV">0.8 UVI</div>
+          <div class="barra"><span id="bUV"></span></div>
+          <div class="estado" id="eUV">Bajo</div>
+        </div>
+
+        <div class="sensor">
+          <i class="fa-solid fa-wave-square"></i>
+          <h3>Vibraciones</h3>
+          <div class="valor" id="sVibracion">0.45 m/s²</div>
+          <div class="barra"><span id="bVibracion"></span></div>
+          <div class="estado" id="eVibracion">Segura</div>
+        </div>
+      </div>
+
+      <div class="titulo-seccion">
+        <h3><i class="fa-solid fa-chart-line"></i> Comportamiento Histórico de Variables</h3>
+        <span class="nota">Muestra de tendencia · periodo ilustrativo</span>
+      </div>
+      <div class="grid-2col">
+        <div class="contenedor-grafica">
+          <div class="grafica-titulo"><h3>Temperatura y sonido</h3><span class="nota">°C · dB</span></div>
+          <canvas id="chartTempRuido"></canvas>
+        </div>
+        <div class="contenedor-grafica">
+          <div class="grafica-titulo"><h3>Iluminación y vibración</h3><span class="nota">lux · m/s²</span></div>
+          <canvas id="chartLuxVib"></canvas>
+        </div>
+      </div>
+      <span class="nota" id="ultimaActualizacionSensores" aria-live="polite">Última actualización: muestra de demostración</span>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 3: TEST IMSS (10 PREGUNTAS EXACTAS) -->
+  <section id="imss" class="panel">
+    <div class="tarjeta">
+      <div class="titulo-seccion">
+        <h2><i class="fa-solid fa-clipboard-question"></i> Cuestionario de bienestar laboral</h2>
+        <span class="nota">Boceto de preguntas Sí/No · validar instrumento y puntuación antes de uso.</span>
+      </div>
+
+      <div class="aviso-prototipo" style="margin-bottom:18px;">
+        <i class="fa-solid fa-flask"></i>
+        <div><strong>Cuestionario de demostración</strong><p>Las preguntas y puntuaciones son ilustrativas; no representan una evaluación oficial ni sustituyen una valoración profesional.</p></div>
+      </div>
+
+      <div id="cuestionarioIMSS"></div>
+
+      <button class="boton" onclick="calificarIMSS()"><i class="fa-solid fa-calculator"></i> Evaluar</button>
+
+      <div class="resultado" id="resultadoIMSS"></div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN 4: SUITE DE ERGONOMÍA CON PESTAÑAS -->
+  <section id="ergonomia" class="panel">
+    <div class="tarjeta">
+      <div class="titulo-seccion">
+        <h2><i class="fa-solid fa-person-dots-from-line"></i> Suite de Evaluaciones Ergonómicas</h2>
+        <span class="nota">Selecciona un método para explorar el formulario del prototipo.</span>
+      </div>
+
+      <div class="aviso-prototipo" style="margin-bottom:18px;">
+        <i class="fa-solid fa-flask"></i>
+        <div><strong>Evaluaciones de demostración</strong><p>Los formularios y resultados son muestras visuales; no están validados para tomar decisiones ergonómicas.</p></div>
+      </div>
+
+      <!-- Barra de pestañas selectora de evaluaciones -->
+      <div class="menu-evaluaciones">
+        <button class="btn-eval-tab activo" onclick="seleccionarEvaluacion('rula', this)"><i class="fa-solid fa-hand"></i> Evaluación RULA</button>
+        <button class="btn-eval-tab" onclick="seleccionarEvaluacion('reba', this)"><i class="fa-solid fa-person-walking"></i> Evaluación REBA</button>
+        <button class="btn-eval-tab" onclick="seleccionarEvaluacion('niosh', this)"><i class="fa-solid fa-box-open"></i> Evaluación NIOSH</button>
+        <button class="btn-eval-tab" onclick="seleccionarEvaluacion('owas', this)"><i class="fa-solid fa-person"></i> Evaluación OWAS</button>
+        <button class="btn-eval-tab" onclick="seleccionarEvaluacion('ocra', this)"><i class="fa-solid fa-gauge-high"></i> Evaluación OCRA</button>
+        <button class="btn-eval-tab" onclick="seleccionarEvaluacion('qec', this)"><i class="fa-solid fa-clipboard-list"></i> Evaluación QEC</button>
+      </div>
+
+      <!-- RULA -->
+      <div id="eval-rula" class="eval-modulo activo">
+        <div class="control">
+          <h3>Evaluación RULA</h3>
+          <div class="campo"><label>Brazo superior (1-6)</label><select id="rulaBrazoSup"><option value="1">1 — Posición óptima</option><option value="3">3 — Flexión 20°-45°</option><option value="5">5 — Flexión > 90°</option></select><div class="ejemplo">Ejemplo: Posición del hombro al manipular controles de la cabina.</div></div>
+          <div class="campo"><label>Brazo inferior (1-3)</label><select id="rulaBrazoInf"><option value="1">1 — Flexión 60°-100°</option><option value="2">2 — Flexión < 60° o > 100°</option></select><div class="ejemplo">Ejemplo: Angulación del codo sobre el escritorio.</div></div>
+          <div class="campo"><label>Muñeca (1-3)</label><select id="rulaMuneca"><option value="1">1 — Neutra</option><option value="2">2 — Desviación leve</option><option value="3">3 — Desviación extrema</option></select><div class="ejemplo">Ejemplo: Uso del ratón o teclado.</div></div>
+          <div class="campo"><label>Giro de muñeca</label><select id="rulaGiro"><option value="1">1 — Giro medio</option><option value="2">2 — Giro en rango extremo</option></select></div>
+          <div class="campo"><label>Cuello (1-4)</label><select id="rulaCuello"><option value="1">1 — Inclinación 0°-10°</option><option value="2">2 — Inclinación 10°-20°</option><option value="4">4 — Extensión o flexión > 20°</option></select></div>
+          <div class="campo"><label>Tronco (1-6)</label><select id="rulaTronco"><option value="1">1 — Erguido</option><option value="3">3 — Inclinación 20°-60°</option></select></div>
+          <button class="boton" onclick="calcularRULA()">Evaluar RULA</button>
+          <div class="resultado" id="resRULA"></div>
+        </div>
+      </div>
+
+      <!-- REBA -->
+      <div id="eval-reba" class="eval-modulo">
+        <div class="control">
+          <h3>Evaluación REBA</h3>
+          <div class="campo"><label>Cuello (1-2)</label><select id="rebaCuello"><option value="1">1 — Flexión 0°-20°</option><option value="2">2 — Flexión > 20°</option></select></div>
+          <div class="campo"><label>Tronco (1-6)</label><select id="rebaTronco"><option value="1">1 — Recto</option><option value="3">3 — Flexión 20°-60°</option></select></div>
+          <div class="campo"><label>Piernas (1-2)</label><select id="rebaPiernas"><option value="1">1 — Soporte bilateral simétrico</option><option value="2">2 — Sin soporte adecuado</option></select></div>
+          <div class="campo"><label>Brazo (1-3)</label><select id="rebaBrazo"><option value="1">1 — Flexión 0°-20°</option><option value="3">3 — Flexión > 45°</option></select></div>
+          <div class="campo"><label>Antebrazo (1-3)</label><select id="rebaAntebrazo"><option value="1">1 — Flexión 60°-100°</option><option value="2">2 — Fuera de rango</option></select></div>
+          <div class="campo"><label>Muñeca (1-3)</label><select id="rebaMuneca"><option value="1">1 — Neutra</option><option value="2">2 — Desviación</option></select></div>
+          <div class="campo"><label>Carga (0-3)</label><select id="rebaCarga"><option value="0">0 — Menos de 5 kg</option><option value="1">1 — 5 a 10 kg</option><option value="2">2 — Más de 10 kg</option></select></div>
+          <button class="boton" onclick="calcularREBA()">Evaluar REBA</button>
+          <div class="resultado" id="resREBA"></div>
+        </div>
+      </div>
+
+      <!-- NIOSH -->
+      <div id="eval-niosh" class="eval-modulo">
+        <div class="control">
+          <h3>Evaluación NIOSH</h3>
+          <div class="campo"><label>Peso levantado (kg)</label><input type="number" id="nioshPeso" value="12"></div>
+          <div class="campo"><label>Distancia horizontal H (cm)</label><input type="number" id="nioshH" value="30"></div>
+          <div class="campo"><label>Distancia vertical V (cm)</label><input type="number" id="nioshV" value="75"></div>
+          <div class="campo"><label>Frecuencia (lifts/min)</label><input type="number" id="nioshFreq" value="1"></div>
+          <button class="boton" onclick="calcularNIOSH()">Evaluar NIOSH</button>
+          <div class="resultado" id="resNIOSH"></div>
+        </div>
+      </div>
+
+      <!-- OWAS -->
+      <div id="eval-owas" class="eval-modulo">
+        <div class="control">
+          <h3>Evaluación OWAS</h3>
+          <div class="campo"><label>Postura de espalda (1-4)</label><select id="owasEspalda"><option value="1">1 — Derecha</option><option value="2">2 — Flexionada</option><option value="3">3 — Con torsión</option></select></div>
+          <div class="campo"><label>Postura de brazos (1-3)</label><select id="owasBrazos"><option value="1">1 — Ambos bajo hombros</option><option value="2">2 — Un brazo arriba</option><option value="3">3 — Ambos arriba</option></select></div>
+          <div class="campo"><label>Postura de piernas (1-7)</label><select id="owasPiernas"><option value="1">1 — Sentado</option><option value="2">2 — De pie con 2 piernas rectas</option></select></div>
+          <button class="boton" onclick="calcularOWAS()">Evaluar OWAS</button>
+          <div class="resultado" id="resOWAS"></div>
+        </div>
+      </div>
+
+      <!-- OCRA -->
+      <div id="eval-ocra" class="eval-modulo">
+        <div class="control">
+          <h3>Evaluación OCRA</h3>
+          <div class="campo"><label>Acciones técnicas por minuto</label><input type="number" id="ocraAcciones" value="25"></div>
+          <div class="campo"><label>Duración tarea (minutos)</label><input type="number" id="ocraDuracion" value="120"></div>
+          <button class="boton" onclick="calcularOCRA()">Evaluar OCRA</button>
+          <div class="resultado" id="resOCRA"></div>
+        </div>
+      </div>
+
+      <!-- QEC -->
+      <div id="eval-qec" class="eval-modulo">
+        <div class="control">
+          <h3>Evaluación QEC</h3>
+          <div class="campo"><label>Espalda (1-4)</label><select id="qecEspalda"><option value="1">1 — Casi neutra</option><option value="2">2 — Moderada</option><option value="4">4 — Muy flexionada</option></select></div>
+          <div class="campo"><label>Cuello (1-4)</label><select id="qecCuello"><option value="1">1 — Normal</option><option value="3">3 — Girado o inclinado</option></select></div>
+          <div class="campo"><label>Hombros (1-4)</label><select id="qecHombros"><option value="1">1 — Debajo de codos</option><option>3</option></select></div>
+          <div class="campo"><label>Muñecas (1-4)</label><select id="qecMunecas"><option value="1">1 — Rectas</option><option>2</option></select></div>
+          <button class="boton" onclick="calcularQEC()">Evaluar QEC</button>
+          <div class="resultado" id="resQEC"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  ErgoCabina HMI · Prototipo visual para dos cabinas ergonómicas
+</footer>
+
+<script>
+  function toggleMenuAjustes(event) {
+    event.stopPropagation();
+    document.getElementById("dropdownAjustes").classList.toggle("visible");
+  }
+
+  window.addEventListener("click", () => {
+    document.getElementById("dropdownAjustes").classList.remove("visible");
+  });
+
+  function cambiarTema(tema) {
+    document.documentElement.setAttribute("data-theme", tema);
+    document.getElementById("dropdownAjustes").classList.remove("visible");
+    actualizarColoresGraficas(tema);
+  }
+
+  function actualizarColoresGraficas(tema) {
+    const textColor = tema === 'claro' ? '#0f172a' : '#f1f5f9';
+    const gridColor = tema === 'claro' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.05)';
+
+    [
+      { chart: chartTempRuido, axes: ["yTemp", "yRuido"] },
+      { chart: chartLuxVib, axes: ["yLux", "yVib"] }
+    ].forEach(({ chart, axes }) => {
+      chart.options.scales.x.ticks.color = textColor;
+      axes.forEach(axisName => {
+        const axis = chart.options.scales[axisName];
+        axis.ticks.color = textColor;
+        if (axisName === "yTemp" || axisName === "yLux") axis.grid.color = gridColor;
+      });
+      chart.options.plugins.legend.labels.color = textColor;
+      chart.update('none');
+    });
+  }
+
+  function seleccionarEvaluacion(metodo, btnElement) {
+    document.querySelectorAll(".btn-eval-tab").forEach(btn => btn.classList.remove("activo"));
+    btnElement.classList.add("activo");
+    document.querySelectorAll(".eval-modulo").forEach(mod => mod.classList.remove("activo"));
+    document.getElementById("eval-" + metodo).classList.add("activo");
+  }
+  let cabinaActiva = 1;
+
+  const datosCabinas = {
+    1: { luz: 75, temp: 22, vol: 35, lumIzq: true, lumDer: true, aire: true, sonido: false, vent: true, alarma: true },
+    2: { luz: 50, temp: 24, vol: 20, lumIzq: true, lumDer: false, aire: true, sonido: true, vent: true, alarma: false }
+  };
+
+  const botonesNav = document.querySelectorAll("nav button");
+  botonesNav.forEach(b => {
+    b.addEventListener("click", () => mostrarPanel(b.dataset.panel));
+  });
+
+  function mostrarPanel(id) {
+    botonesNav.forEach(b => b.classList.toggle("activo", b.dataset.panel === id));
+    document.querySelectorAll(".panel").forEach(panel => {
+      panel.classList.toggle("visible", panel.id === id);
+    });
+  }
+
+  document.querySelectorAll(".btn-cabina-global").forEach(b => {
+    b.addEventListener("click", () => {
+      seleccionarCabina(Number(b.dataset.cabina));
+    });
+  });
+
+  document.querySelectorAll(".btn-ver-cabina").forEach(b => {
+    b.addEventListener("click", () => {
+      seleccionarCabina(Number(b.dataset.cabina));
+      mostrarPanel("cabinas");
+    });
+  });
+
+  function seleccionarCabina(num) {
+    cabinaActiva = num;
+    document.querySelectorAll(".btn-cabina-global").forEach(b => {
+      const seleccionada = Number(b.dataset.cabina) === num;
+      b.classList.toggle("activo", seleccionada);
+      b.setAttribute("aria-pressed", seleccionada);
+    });
+    document.getElementById("cabinaSeleccionadaTexto").textContent = `Cabina 0${num}`;
+    cargarEstadoCabina(num);
+    actualizarSensores();
+  }
+
+  function cargarEstadoCabina(num) {
+    const c = datosCabinas[num];
+    document.getElementById("luz").value = c.luz;
+    document.getElementById("valorLuz").textContent = c.luz + `% (${Math.round(c.luz*7.5)} Lux)`;
+    document.getElementById("temperatura").value = c.temp;
+    document.getElementById("valorTemp").textContent = c.temp + " °C";
+    document.getElementById("volumen").value = c.vol;
+    document.getElementById("valorVolumen").textContent = c.vol + "%";
+
+    setSwitchState("swLumIzq", c.lumIzq);
+    setSwitchState("swLumDer", c.lumDer);
+    setSwitchState("swAire", c.aire);
+    setSwitchState("swSonido", c.sonido);
+    setSwitchState("swVent", c.vent);
+    setSwitchState("swAlarma", c.alarma);
+  }
+
+  function setSwitchState(id, estado) {
+    const el = document.getElementById(id);
+    if (estado) el.classList.add("encendido");
+    else el.classList.remove("encendido");
+    el.setAttribute("aria-checked", estado);
+  }
+
+  function toggleSwitch(el, key) {
+    el.classList.toggle("encendido");
+    const encendido = el.classList.contains("encendido");
+    el.setAttribute("aria-checked", encendido);
+    datosCabinas[cabinaActiva][key] = encendido;
+  }
+
+  function actualizarControl(tipo) {
+    if (tipo === 'luz') {
+      const v = document.getElementById("luz").value;
+      datosCabinas[cabinaActiva].luz = v;
+      document.getElementById("valorLuz").textContent = `${v}% (${Math.round(v * 7.5)} Lux)`;
+    } else if (tipo === 'temp') {
+      const v = document.getElementById("temperatura").value;
+      datosCabinas[cabinaActiva].temp = v;
+      document.getElementById("valorTemp").textContent = v + " °C";
+    } else if (tipo === 'vol') {
+      const v = document.getElementById("volumen").value;
+      datosCabinas[cabinaActiva].vol = v;
+      document.getElementById("valorVolumen").textContent = v + "%";
+    }
+  }
+
+  const maxPuntos = 10;
+  const etiquetasTiempo = Array(maxPuntos).fill('');
+
+  const ctx1 = document.getElementById('chartTempRuido').getContext('2d');
+  const chartTempRuido = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: [...etiquetasTiempo],
+      datasets: [
+        { label: 'Temperatura (°C)', borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', data: Array(maxPuntos).fill(22), yAxisID: 'yTemp', tension: 0.3, fill: true },
+        { label: 'Sonido (dB)', borderColor: '#f59e0b', backgroundColor: 'transparent', borderDash: [4, 4], data: Array(maxPuntos).fill(55), yAxisID: 'yRuido', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#f1f5f9', maxTicksLimit: 5 } },
+        yTemp: { type: 'linear', position: 'left', min: 15, max: 35, ticks: { color: '#10b981' } },
+        yRuido: { type: 'linear', position: 'right', min: 40, max: 95, grid: { drawOnChartArea: false }, ticks: { color: '#f59e0b' } }
+      },
+      plugins: { legend: { labels: { color: '#f1f5f9' } } }
+    }
+  });
+
+  const ctx2 = document.getElementById('chartLuxVib').getContext('2d');
+  const chartLuxVib = new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels: [...etiquetasTiempo],
+      datasets: [
+        { label: 'Iluminación (Lux)', borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.08)', data: Array(maxPuntos).fill(500), yAxisID: 'yLux', tension: 0.3, fill: true },
+        { label: 'Vibración (m/s²)', borderColor: '#ef4444', backgroundColor: 'transparent', data: Array(maxPuntos).fill(0.4), yAxisID: 'yVib', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#f1f5f9', maxTicksLimit: 5 } },
+        yLux: { type: 'linear', position: 'left', min: 100, max: 1000, ticks: { color: '#34d399' } },
+        yVib: { type: 'linear', position: 'right', min: 0, max: 2.5, grid: { drawOnChartArea: false }, ticks: { color: '#ef4444' } }
+      },
+      plugins: { legend: { labels: { color: '#f1f5f9' } } }
+    }
+  });
+
+  function actualizarSensores() {
+    const baseTemp = cabinaActiva === 1 ? 22 : 24;
+    const baseLux = cabinaActiva === 1 ? 550 : 400;
+
+    const temp = (baseTemp + (Math.random() * 1.8 - 0.9)).toFixed(1);
+    const hum = (45 + Math.random() * 8).toFixed(0);
+    const aire = (420 + Math.random() * 80).toFixed(0);
+    const lux = (baseLux + (Math.random() * 50 - 25)).toFixed(0);
+    const sonido = (54 + Math.random() * 12).toFixed(0);
+    const uv = (0.7 + Math.random() * 0.3).toFixed(1);
+    const vib = (0.3 + Math.random() * 0.4).toFixed(2);
+
+    document.getElementById("sTemperatura").textContent = temp + " °C";
+    document.getElementById("sHumedad").textContent = hum + "%";
+    document.getElementById("sAire").textContent = aire + " ppm";
+    document.getElementById("sLux").textContent = lux + " Lux";
+    document.getElementById("sSonido").textContent = sonido + " dB";
+    document.getElementById("sUV").textContent = uv + " UVI";
+    document.getElementById("sVibracion").textContent = vib + " m/s²";
+
+    document.getElementById("bTemperatura").style.width = Math.min(100, (temp / 35) * 100) + "%";
+    document.getElementById("bHumedad").style.width = hum + "%";
+    document.getElementById("bAire").style.width = Math.min(100, (aire / 1000) * 100) + "%";
+    document.getElementById("bLux").style.width = Math.min(100, (lux / 1000) * 100) + "%";
+    document.getElementById("bSonido").style.width = Math.min(100, (sonido / 100) * 100) + "%";
+    document.getElementById("bUV").style.width = Math.min(100, (uv / 2) * 100) + "%";
+    document.getElementById("bVibracion").style.width = Math.min(100, (vib / 2) * 100) + "%";
+
+    const hora = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    document.getElementById("ultimaActualizacionSensores").textContent = `Última actualización de demostración: ${hora}`;
+    pushChartData(chartTempRuido, Number(temp), Number(sonido), hora);
+    pushChartData(chartLuxVib, Number(lux), Number(vib), hora);
+  }
+
+  function pushChartData(chart, val1, val2, etiqueta) {
+    chart.data.labels.push(etiqueta);
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.push(val1);
+    chart.data.datasets[0].data.shift();
+    chart.data.datasets[1].data.push(val2);
+    chart.data.datasets[1].data.shift();
+    chart.update('none');
+  }
+
+  setInterval(actualizarSensores, 1500);
+
+  /* CUESTIONARIO IMSS (10 PREGUNTAS EXACTAS) */
+  const preguntasIMSS = [
+    "¿Tu trabajo te exige mucho esfuerzo físico o mental?",
+    "¿Tienes poco control sobre cómo realizas tus tareas?",
+    "¿Recibes apoyo de tus compañeros?",
+    "¿Tu jefe te reconoce por tu trabajo?",
+    "¿El ambiente laboral es tenso o conflictivo?",
+    "¿Te sientes motivado al ir a trabajar?",
+    "¿Tienes tiempo suficiente para realizar tus actividades?",
+    "¿Sientes que tu trabajo es valorado?",
+    "¿Tienes oportunidades para aprender y crecer?",
+    "¿Te sientes satisfecho con tu empleo actual?"
+  ];
+
+  const contIMSS = document.getElementById("cuestionarioIMSS");
+  preguntasIMSS.forEach((texto, i) => {
+    const div = document.createElement("div");
+    div.className = "pregunta";
+    div.innerHTML = `
+      <strong>${i + 1}. ${texto}</strong>
+      <div class="opciones">
+        <label><input type="radio" name="imss${i}" value="10"> Sí</label>
+        <label><input type="radio" name="imss${i}" value="0"> No</label>
+      </div>
+    `;
+    contIMSS.appendChild(div);
+  });
+
+  function calificarIMSS() {
+    let puntos = 0;
+    let respondidas = 0;
+    for (let i = 0; i < preguntasIMSS.length; i++) {
+      const sel = document.querySelector(`input[name="imss${i}"]:checked`);
+      if (sel) { respondidas++; puntos += parseInt(sel.value); }
+    }
+    const res = document.getElementById("resultadoIMSS");
+    res.classList.add("visible");
+    if (respondidas < preguntasIMSS.length) {
+      res.innerHTML = `<strong style="color:var(--alerta);">Faltan ${preguntasIMSS.length - respondidas} preguntas.</strong>`;
+      return;
+    }
+    res.innerHTML = `<h3>Resultado de demostración</h3><p><strong>Puntuación ilustrativa:</strong> ${puntos} / 100</p>`;
+  }
+
+  function mostrarRes(id, html) {
+    const el = document.getElementById(id);
+    el.classList.add("visible");
+    el.innerHTML = `<span class="etiqueta-demo"><i class="fa-solid fa-flask"></i> Resultado ilustrativo</span><br>${html}`;
+  }
+
+  function calcularRULA() {
+    const score = parseInt(document.getElementById("rulaBrazoSup").value) + 2;
+    mostrarRes("resRULA", `<strong>Puntaje RULA: ${score}</strong><br>Grupo A y B calculados.`);
+  }
+
+  function calcularREBA() {
+    mostrarRes("resREBA", `<strong>Puntaje REBA: 4</strong><br>Riesgo bajo, requiere revisión.`);
+  }
+
+  function calcularNIOSH() {
+    const p = +document.getElementById("nioshPeso").value;
+    mostrarRes("resNIOSH", `<strong>Índice de Levantamiento: ${(p / 15).toFixed(2)}</strong><br>Evaluación completada.`);
+  }
+
+  function calcularOWAS() {
+    mostrarRes("resOWAS", `<strong>Categoría OWAS: 2</strong><br>Acción recomendada a futuro.`);
+  }
+
+  function calcularOCRA() {
+    mostrarRes("resOCRA", `<strong>Índice OCRA: 1.8</strong><br>Riesgo aceptable.`);
+  }
+
+  function calcularQEC() {
+    mostrarRes("resQEC", `<strong>Exposición QEC: 35%</strong><br>Carga biomecánica moderada.`);
+  }
+
+  cargarEstadoCabina(1);
+  actualizarSensores();
+</script>
+
+</body>
+</html>
